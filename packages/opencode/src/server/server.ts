@@ -161,6 +161,90 @@ export namespace Server {
         },
       )
       .get(
+        "/auth",
+        describeRoute({
+          summary: "List all auth credentials",
+          description: "List all stored authentication credentials",
+          operationId: "auth.list",
+          responses: {
+            200: {
+              description: "All authentication credentials",
+              content: {
+                "application/json": {
+                  schema: resolver(z.record(z.string(), Auth.Info.zod)),
+                },
+              },
+            },
+            ...errors(400),
+          },
+        }),
+        async (c) => {
+          const data = await Auth.all()
+          return c.json(data)
+        },
+      )
+      .get(
+        "/auth/:providerID/accounts",
+        describeRoute({
+          summary: "List accounts for a provider",
+          description: "List named accounts for a specific provider",
+          operationId: "auth.accounts",
+          responses: {
+            200: {
+              description: "Named accounts for the provider",
+              content: {
+                "application/json": {
+                  schema: resolver(z.record(z.string(), Auth.Info.zod)),
+                },
+              },
+            },
+            ...errors(400),
+          },
+        }),
+        validator(
+          "param",
+          z.object({
+            providerID: ProviderID.zod,
+          }),
+        ),
+        async (c) => {
+          const providerID = c.req.valid("param").providerID
+          const data = await Auth.accounts(providerID)
+          return c.json(data)
+        },
+      )
+      .post(
+        "/auth/:providerID/activate/:label",
+        describeRoute({
+          summary: "Activate a named account",
+          description: "Switch the active credentials for a provider to a named account",
+          operationId: "auth.activate",
+          responses: {
+            200: {
+              description: "Successfully activated account",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+            ...errors(400),
+          },
+        }),
+        validator(
+          "param",
+          z.object({
+            providerID: ProviderID.zod,
+            label: z.string(),
+          }),
+        ),
+        async (c) => {
+          const { providerID, label } = c.req.valid("param")
+          await Auth.activate(providerID, label)
+          return c.json(true)
+        },
+      )
+      .get(
         "/doc",
         openAPIRouteHandler(app, {
           documentation: {

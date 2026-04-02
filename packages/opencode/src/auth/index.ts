@@ -46,6 +46,8 @@ export namespace Auth {
     readonly all: () => Effect.Effect<Record<string, Info>, AuthError>
     readonly set: (key: string, info: Info) => Effect.Effect<void, AuthError>
     readonly remove: (key: string) => Effect.Effect<void, AuthError>
+    readonly accounts: (providerID: string) => Effect.Effect<Record<string, Info>, AuthError>
+    readonly activate: (providerID: string, label: string) => Effect.Effect<void, AuthError>
   }
 
   export class Service extends ServiceMap.Service<Service, Interface>()("@opencode/Auth") {}
@@ -83,7 +85,23 @@ export namespace Auth {
         yield* fsys.writeJson(file, data, 0o600).pipe(Effect.mapError(fail("Failed to write auth data")))
       })
 
-      return Service.of({ get, all, set, remove })
+      const accounts = Effect.fn("Auth.accounts")(function* (providerID: string) {
+        const data = yield* all()
+        const prefix = providerID + ":"
+        return Record.filterMap(data, (value, key) =>
+          key.startsWith(prefix) ? Result.succeed(value) : Result.failVoid,
+        )
+      })
+
+      const activate = Effect.fn("Auth.activate")(function* (providerID: string, label: string) {
+        const key = providerID + ":" + label
+        const data = yield* all()
+        const info = data[key]
+        if (!info) return yield* new AuthError({ message: `Account "${label}" not found for ${providerID}` })
+        yield* set(providerID, info)
+      })
+
+      return Service.of({ get, all, set, remove, accounts, activate })
     }),
   )
 
@@ -105,5 +123,13 @@ export namespace Auth {
 
   export async function remove(key: string) {
     return runPromise((service) => service.remove(key))
+  }
+
+  export async function accounts(providerID: string): Promise<Record<string, Info>> {
+    return runPromise((service) => service.accounts(providerID))
+  }
+
+  export async function activate(providerID: string, label: string) {
+    return runPromise((service) => service.activate(providerID, label))
   }
 }
