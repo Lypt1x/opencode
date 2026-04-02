@@ -1,6 +1,7 @@
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@opencode-ai/plugin/tui"
 import { createMemo, Match, Show, Switch } from "solid-js"
 import { Global } from "@/global"
+import { useQuota } from "@tui/util/quota"
 
 const id = "internal:home-footer"
 
@@ -46,10 +47,21 @@ function Mcp(props: { api: TuiPluginApi }) {
 
 function Version(props: { api: TuiPluginApi }) {
   const theme = () => props.api.theme.current
+  const { quota } = useQuota()
+  const status = createMemo(() => {
+    const q = quota()
+    if (!q) return props.api.app.version
+    const parts: string[] = [props.api.app.version]
+    if (q.label && q.username) parts.push(`${q.label} (@${q.username})`)
+    else if (q.username) parts.push(`@${q.username}`)
+    if (q.unlimited) parts.push("unlimited")
+    else if (q.percent >= 0) parts.push(`${Math.round(q.percent)}% left`)
+    return parts.join(" · ")
+  })
 
   return (
     <box flexShrink={0}>
-      <text fg={theme().textMuted}>{props.api.app.version}</text>
+      <text fg={theme().textMuted}>{status()}</text>
     </box>
   )
 }

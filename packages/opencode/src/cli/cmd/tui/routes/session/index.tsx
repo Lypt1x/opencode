@@ -60,7 +60,6 @@ import { DialogConfirm } from "@tui/ui/dialog-confirm"
 import { DialogTimeline } from "./dialog-timeline"
 import { DialogForkFromTimeline } from "./dialog-fork-from-timeline"
 import { DialogSessionRename } from "../../component/dialog-session-rename"
-import { DialogGitHub } from "../../component/dialog-github"
 import { Sidebar } from "./sidebar"
 import { SubagentFooter } from "./subagent-footer.tsx"
 import { Flag } from "@/flag/flag"
@@ -961,18 +960,6 @@ export function Session() {
         moveChild(-1)
         dialog.clear()
       }),
-    },
-    {
-      title: "GitHub accounts",
-      value: "gh.manage",
-      category: "Session",
-      slash: {
-        name: "gh",
-        aliases: ["github"],
-      },
-      onSelect: (dialog) => {
-        dialog.replace(() => <DialogGitHub />)
-      },
     },
   ])
 

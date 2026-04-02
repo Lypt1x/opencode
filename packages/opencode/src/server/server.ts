@@ -23,6 +23,37 @@ globalThis.AI_SDK_LOG_WARNINGS = false
 
 initProjectors()
 
+const COPILOT_HEADERS = {
+  "Editor-Version": "vscode/1.107.0",
+  "User-Agent": "GitHubCopilotChat/0.35.0",
+  "Editor-Plugin-Version": "copilot-chat/0.35.0",
+  "Copilot-Integration-Id": "vscode-chat",
+  Accept: "application/json",
+}
+
+async function fetchCopilotQuota(token: string) {
+  const headers = { ...COPILOT_HEADERS, Authorization: `token ${token}` }
+  const [user, quota] = await Promise.all([
+    fetch("https://api.github.com/user", {
+      headers: { Authorization: `token ${token}`, Accept: "application/vnd.github+json", "User-Agent": "opencode" },
+    }).then((r) => (r.ok ? (r.json() as Promise<{ login: string; name?: string }>) : undefined)),
+    fetch("https://api.github.com/copilot_internal/user", { headers }).then((r) =>
+      r.ok ? (r.json() as Promise<Record<string, any>>) : undefined,
+    ),
+  ])
+  const snap = quota?.quota_snapshots?.premium_interactions ?? quota?.quota_snapshots?.chat
+  return {
+    username: user?.login ?? "",
+    name: user?.name ?? undefined,
+    plan: (quota?.copilot_plan as string) ?? "unknown",
+    percent: (snap?.percent_remaining as number) ?? -1,
+    remaining: (snap?.remaining as number) ?? -1,
+    entitlement: (snap?.entitlement as number) ?? -1,
+    unlimited: (snap?.unlimited as boolean) ?? false,
+    reset: (quota?.quota_reset_date as string) ?? "",
+  }
+}
+
 export namespace Server {
   const log = Log.create({ service: "server" })
 
@@ -242,6 +273,95 @@ export namespace Server {
           const { providerID, label } = c.req.valid("param")
           await Auth.activate(providerID, label)
           return c.json(true)
+        },
+      )
+      .get(
+        "/auth/:providerID/quota",
+        describeRoute({
+          summary: "Get quota for active account",
+          description: "Get GitHub Copilot quota and username for the active account of a provider",
+          operationId: "auth.quota",
+          responses: {
+            200: {
+              description: "Quota information",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    z.object({
+                      username: z.string(),
+                      name: z.string().optional(),
+                      label: z.string().optional(),
+                      plan: z.string(),
+                      percent: z.number(),
+                      remaining: z.number(),
+                      entitlement: z.number(),
+                      unlimited: z.boolean(),
+                      reset: z.string(),
+                    }),
+                  ),
+                },
+              },
+            },
+            ...errors(400),
+          },
+        }),
+        validator("param", z.object({ providerID: ProviderID.zod })),
+        async (c) => {
+          const providerID = c.req.valid("param").providerID
+          const [info, accts] = await Promise.all([Auth.get(providerID), Auth.accounts(providerID)])
+          if (!info || info.type !== "oauth") return c.json({ error: "No active OAuth account" }, 400)
+          const q = await fetchCopilotQuota(info.refresh)
+          const match = Object.entries(accts).find(([, v]) => v.type === "oauth" && v.refresh === info.refresh)
+          const label = match ? match[0].slice(providerID.length + 1) : undefined
+          return c.json({ ...q, label })
+        },
+      )
+      .get(
+        "/auth/:providerID/quota/all",
+        describeRoute({
+          summary: "Get quota for all named accounts",
+          description: "Get GitHub Copilot quota and username for every named account of a provider",
+          operationId: "auth.quotaAll",
+          responses: {
+            200: {
+              description: "Quota per account label",
+              content: {
+                "application/json": {
+                  schema: resolver(z.record(z.string(), z.any())),
+                },
+              },
+            },
+            ...errors(400),
+          },
+        }),
+        validator("param", z.object({ providerID: ProviderID.zod })),
+        async (c) => {
+          const providerID = c.req.valid("param").providerID
+          const [active, accts] = await Promise.all([Auth.get(providerID), Auth.accounts(providerID)])
+          const result: Record<string, unknown> = {}
+          const tasks: Promise<void>[] = []
+          if (active && active.type === "oauth") {
+            tasks.push(
+              fetchCopilotQuota(active.refresh)
+                .then((q) => {
+                  result["__active__"] = q
+                })
+                .catch(() => {}),
+            )
+          }
+          for (const [key, val] of Object.entries(accts)) {
+            if (val.type !== "oauth") continue
+            const label = key.slice(providerID.length + 1)
+            tasks.push(
+              fetchCopilotQuota(val.refresh)
+                .then((q) => {
+                  result[label] = q
+                })
+                .catch(() => {}),
+            )
+          }
+          await Promise.all(tasks)
+          return c.json(result)
         },
       )
       .get(

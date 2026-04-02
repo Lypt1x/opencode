@@ -12,6 +12,7 @@ import { Clipboard } from "@tui/util/clipboard"
 import { useToast } from "../ui/toast"
 import type { ProviderAuthAuthorization } from "@opencode-ai/sdk/v2"
 import { DialogModel } from "./dialog-model"
+import { fetchAllQuotas, type QuotaInfo } from "@tui/util/quota"
 
 const PROVIDER_ID = "github-copilot"
 
@@ -30,6 +31,16 @@ async function fetchActive(sdk: ReturnType<typeof useSDK>) {
 
 function labelFromKey(key: string) {
   return key.slice(PROVIDER_ID.length + 1)
+}
+
+function formatQuota(q: QuotaInfo | undefined) {
+  if (!q) return undefined
+  const parts: string[] = []
+  if (q.name) parts.push(q.name)
+  if (q.username) parts.push(`(@${q.username})`)
+  if (q.unlimited) parts.push("· unlimited")
+  else if (q.percent >= 0) parts.push(`· ${Math.round(q.percent)}% left`)
+  return parts.join(" ") || undefined
 }
 
 export function DialogGitHub() {
@@ -304,7 +315,6 @@ function OAuthCodeEntry(props: {
 
 function LabelAccount(props: { providerID: string }) {
   const sdk = useSDK()
-  const sync = useSync()
   const dialog = useDialog()
   const toast = useToast()
 
@@ -326,10 +336,9 @@ function LabelAccount(props: { providerID: string }) {
             body: JSON.stringify(active),
           })
         }
-        await sdk.client.instance.dispose()
-        await sync.bootstrap()
         toast.show({ variant: "success", message: `Account "${name}" added` })
         dialog.replace(() => <DialogModel providerID={props.providerID} />)
+        sdk.client.instance.dispose()
       }}
     />
   )
@@ -337,26 +346,41 @@ function LabelAccount(props: { providerID: string }) {
 
 function SwitchAccount() {
   const sdk = useSDK()
-  const sync = useSync()
   const dialog = useDialog()
   const toast = useToast()
-  const [options, setOptions] = createSignal<{ title: string; value: string }[]>([])
+  const [options, setOptions] = createSignal<{ title: string; value: string; description?: string }[]>([])
+  const [current, setCurrent] = createSignal<string | undefined>()
 
   onMount(async () => {
-    const accts = await fetchAccounts(sdk)
+    const [accts, active, quotas] = await Promise.all([fetchAccounts(sdk), fetchActive(sdk), fetchAllQuotas(sdk)])
     const labels = Object.keys(accts).map(labelFromKey)
     if (labels.length === 0) {
       toast.show({ variant: "warning", message: "No saved accounts to switch to" })
       dialog.clear()
       return
     }
-    setOptions(labels.map((l) => ({ title: l, value: l })))
+    if (active) {
+      const refresh = (active as Record<string, unknown>).refresh
+      for (const [key, val] of Object.entries(accts)) {
+        if ((val as Record<string, unknown>).refresh === refresh) {
+          setCurrent(labelFromKey(key))
+          break
+        }
+      }
+    }
+    setOptions(
+      labels.map((l) => {
+        const q = quotas[l] as QuotaInfo | undefined
+        return { title: l, value: l, description: formatQuota(q) }
+      }),
+    )
   })
 
   return (
     <DialogSelect
       title="Switch to account"
       options={options()}
+      current={current()}
       onSelect={async (option) => {
         const res = await sdk.fetch(`${sdk.url}/auth/${PROVIDER_ID}/activate/${encodeURIComponent(option.value)}`, {
           method: "POST",
@@ -366,10 +390,9 @@ function SwitchAccount() {
           dialog.clear()
           return
         }
-        await sdk.client.instance.dispose()
-        await sync.bootstrap()
         toast.show({ variant: "success", message: `Switched to "${option.value}"` })
         dialog.clear()
+        sdk.client.instance.dispose()
       }}
     />
   )
@@ -377,7 +400,6 @@ function SwitchAccount() {
 
 function RemoveAccount() {
   const sdk = useSDK()
-  const sync = useSync()
   const dialog = useDialog()
   const toast = useToast()
   const [options, setOptions] = createSignal<{ title: string; value: string }[]>([])
@@ -413,10 +435,9 @@ function RemoveAccount() {
         )
         if (!confirmed) return
         await sdk.client.auth.remove({ providerID: option.value })
-        await sdk.client.instance.dispose()
-        await sync.bootstrap()
         toast.show({ variant: "success", message: `Removed "${option.title}"` })
         dialog.clear()
+        sdk.client.instance.dispose()
       }}
     />
   )

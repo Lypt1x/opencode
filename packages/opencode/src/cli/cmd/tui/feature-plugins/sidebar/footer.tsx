@@ -1,11 +1,13 @@
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@opencode-ai/plugin/tui"
 import { createMemo, Show } from "solid-js"
 import { Global } from "@/global"
+import { useQuota } from "@tui/util/quota"
 
 const id = "internal:sidebar-footer"
 
 function View(props: { api: TuiPluginApi }) {
   const theme = () => props.api.theme.current
+  const { quota } = useQuota()
   const has = createMemo(() =>
     props.api.state.provider.some(
       (item) => item.id !== "opencode" || Object.values(item.models).some((model) => model.cost?.input !== 0),
@@ -22,6 +24,17 @@ function View(props: { api: TuiPluginApi }) {
       parent: list.slice(0, -1).join("/"),
       name: list.at(-1) ?? "",
     }
+  })
+  const account = createMemo(() => {
+    const q = quota()
+    if (!q) return undefined
+    const parts: string[] = []
+    if (q.label && q.username) parts.push(`${q.label} (@${q.username})`)
+    else if (q.username) parts.push(`@${q.username}`)
+    if (q.unlimited) parts.push("unlimited")
+    else if (q.percent >= 0) parts.push(`${Math.round(q.percent)}% left`)
+    if (!parts.length) return undefined
+    return parts.join(" · ")
   })
 
   return (
@@ -70,6 +83,9 @@ function View(props: { api: TuiPluginApi }) {
         </span>{" "}
         <span>{props.api.app.version}</span>
       </text>
+      <Show when={account()}>
+        <text fg={theme().textMuted}>{account()}</text>
+      </Show>
     </box>
   )
 }
