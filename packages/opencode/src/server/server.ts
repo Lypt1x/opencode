@@ -275,7 +275,7 @@ export namespace Server {
     const app = ControlPlaneRoutes({ cors: opts.cors })
     const args = {
       hostname: opts.hostname,
-      idleTimeout: 0,
+      idleTimeout: 120,
       fetch: app.fetch,
       websocket: websocket,
     } as const

@@ -70,18 +70,46 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
       flush()
     }
 
+    const SSE_STALE_TIMEOUT = 30_000
+    const SSE_BACKOFF_INITIAL = 500
+    const SSE_BACKOFF_MAX = 30_000
+
     function startSSE() {
       sse?.abort()
       const ctrl = new AbortController()
       sse = ctrl
       ;(async () => {
+        let backoff = 0
         while (true) {
           if (abort.signal.aborted || ctrl.signal.aborted) break
-          const events = await sdk.event.subscribe({}, { signal: ctrl.signal })
 
-          for await (const event of events.stream) {
-            if (ctrl.signal.aborted) break
-            handleEvent(event)
+          if (backoff > 0) await new Promise((r) => setTimeout(r, backoff))
+          if (abort.signal.aborted || ctrl.signal.aborted) break
+
+          let watchdog: Timer | undefined
+          const sub = new AbortController()
+          const signal = AbortSignal.any([ctrl.signal, sub.signal])
+
+          const resetWatchdog = () => {
+            if (watchdog) clearTimeout(watchdog)
+            watchdog = setTimeout(() => sub.abort(), SSE_STALE_TIMEOUT)
+          }
+
+          try {
+            const events = await sdk.event.subscribe({}, { signal })
+            resetWatchdog()
+
+            for await (const event of events.stream) {
+              if (signal.aborted) break
+              resetWatchdog()
+              handleEvent(event)
+            }
+
+            backoff = 0
+          } catch {
+            backoff = backoff === 0 ? SSE_BACKOFF_INITIAL : Math.min(backoff * 2, SSE_BACKOFF_MAX)
+          } finally {
+            if (watchdog) clearTimeout(watchdog)
           }
 
           if (timer) clearTimeout(timer)

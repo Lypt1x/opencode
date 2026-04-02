@@ -60,6 +60,9 @@ import { ModelID, ProviderID } from "./schema"
 export namespace Provider {
   const log = Log.create({ service: "provider" })
 
+  /** Default per-chunk SSE read timeout (60s). Aborts stale streaming connections after network changes (e.g. VPN reconnect). */
+  const DEFAULT_CHUNK_TIMEOUT = 60_000
+
   function shouldUseCopilotResponsesApi(modelID: string): boolean {
     const match = /^gpt-(\d+)/.exec(modelID)
     if (!match) return false
@@ -1347,7 +1350,7 @@ export namespace Provider {
           if (existing) return existing
 
           const customFetch = options["fetch"]
-          const chunkTimeout = options["chunkTimeout"]
+          const chunkTimeout = options["chunkTimeout"] ?? DEFAULT_CHUNK_TIMEOUT
           delete options["chunkTimeout"]
 
           options["fetch"] = async (input: any, init?: BunFetchRequestInit) => {
