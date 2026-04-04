@@ -42,6 +42,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       }>({
         current: agents()[0].name,
       })
+      let cached: ReturnType<typeof agents>[number] | undefined
       const { theme } = useTheme()
       const colors = createMemo(() => [
         theme.secondary,
@@ -57,7 +58,13 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
           return agents()
         },
         current() {
-          return agents().find((x) => x.name === agentStore.current) ?? agents()[0]
+          const found = agents().find((x) => x.name === agentStore.current)
+          if (found) {
+            cached = found
+            return found
+          }
+          if (cached) return cached
+          return agents()[0]
         },
         set(name: string) {
           if (!agents().some((x) => x.name === name))

@@ -76,9 +76,11 @@ export namespace Agent {
       const auth = yield* Auth.Service
       const skill = yield* Skill.Service
       const provider = yield* Provider.Service
+      const plugin = yield* Plugin.Service
 
       const state = yield* InstanceState.make<State>(
         Effect.fn("Agent.state")(function* (ctx) {
+          yield* plugin.init()
           const cfg = yield* config.get()
           const skillDirs = yield* skill.dirs()
           const whitelistedDirs = [Truncate.GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
@@ -393,11 +395,14 @@ export namespace Agent {
     }),
   )
 
-  export const defaultLayer = layer.pipe(
-    Layer.provide(Provider.defaultLayer),
-    Layer.provide(Auth.defaultLayer),
-    Layer.provide(Config.defaultLayer),
-    Layer.provide(Skill.defaultLayer),
+  export const defaultLayer = Layer.suspend(() =>
+    layer.pipe(
+      Layer.provide(Provider.defaultLayer),
+      Layer.provide(Auth.defaultLayer),
+      Layer.provide(Config.defaultLayer),
+      Layer.provide(Skill.defaultLayer),
+      Layer.provide(Plugin.defaultLayer),
+    ),
   )
 
   const { runPromise } = makeRuntime(Service, defaultLayer)
