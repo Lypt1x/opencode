@@ -133,7 +133,7 @@ function AddAccount() {
     if (method.type === "oauth") {
       let inputs: Record<string, string> | undefined
       if (method.prompts?.length) {
-        inputs = await promptInputs(dialog, method.prompts)
+        inputs = (await promptInputs(dialog, method.prompts)) ?? undefined
         if (!inputs) return
       }
 
