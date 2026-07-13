@@ -63,26 +63,7 @@ nix run nixpkgs#opencode           # หรือ github:anomalyco/opencode ส�
 
 > [!TIP]
 > ลบเวอร์ชันที่เก่ากว่า 0.1.x ก่อนติดตั้ง
-
-### แอปพลิเคชันเดสก์ท็อป (เบต้า)
-
-OpenCode มีให้ใช้งานเป็นแอปพลิเคชันเดสก์ท็อป ดาวน์โหลดโดยตรงจาก [หน้ารุ่น](https://github.com/anomalyco/opencode/releases) หรือ [opencode.ai/download](https://opencode.ai/download)
-
-| แพลตฟอร์ม             | ดาวน์โหลด                             |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `opencode-desktop-darwin-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm`, หรือ AppImage         |
-
-```bash
-# macOS (Homebrew)
-brew install --cask opencode-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
-```
-
-#### ไดเรกทอรีการติดตั้ง
+### ไดเรกทอรีการติดตั้ง
 
 สคริปต์การติดตั้งจะใช้ลำดับความสำคัญตามเส้นทางการติดตั้ง:
 
