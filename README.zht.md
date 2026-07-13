@@ -63,26 +63,7 @@ nix run nixpkgs#opencode           # 或使用 github:anomalyco/opencode 以取�
 
 > [!TIP]
 > 安裝前請先移除 0.1.x 以前的舊版本。
-
-### 桌面應用程式 (BETA)
-
-OpenCode 也提供桌面版應用程式。您可以直接從 [發佈頁面 (releases page)](https://github.com/anomalyco/opencode/releases) 或 [opencode.ai/download](https://opencode.ai/download) 下載。
-
-| 平台                  | 下載連結                              |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `opencode-desktop-darwin-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm`, 或 AppImage           |
-
-```bash
-# macOS (Homebrew Cask)
-brew install --cask opencode-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
-```
-
-#### 安裝目錄
+### 安裝目錄
 
 安裝腳本會依據以下優先順序決定安裝路徑：
 
