@@ -63,26 +63,7 @@ nix run nixpkgs#opencode           # hoặc github:anomalyco/opencode cho nhánh
 
 > [!TIP]
 > Hãy xóa các phiên bản cũ hơn 0.1.x trước khi cài đặt.
-
-### Ứng dụng Desktop (BETA)
-
-OpenCode cũng có sẵn dưới dạng ứng dụng desktop. Tải trực tiếp từ [trang releases](https://github.com/anomalyco/opencode/releases) hoặc [opencode.ai/download](https://opencode.ai/download).
-
-| Nền tảng              | Tải xuống                             |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `opencode-desktop-darwin-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm`, hoặc AppImage         |
-
-```bash
-# macOS (Homebrew)
-brew install --cask opencode-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
-```
-
-#### Thư mục cài đặt
+### Thư mục cài đặt
 
 Tập lệnh cài đặt tuân theo thứ tự ưu tiên sau cho đường dẫn cài đặt:
 
