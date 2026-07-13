@@ -63,26 +63,7 @@ nix run nixpkgs#opencode           # або github:anomalyco/opencode для н�
 
 > [!TIP]
 > Перед встановленням видаліть версії старші за 0.1.x.
-
-### Десктопний застосунок (BETA)
-
-OpenCode також доступний як десктопний застосунок. Завантажуйте напряму зі [сторінки релізів](https://github.com/anomalyco/opencode/releases) або [opencode.ai/download](https://opencode.ai/download).
-
-| Платформа             | Завантаження                          |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `opencode-desktop-darwin-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm` або AppImage           |
-
-```bash
-# macOS (Homebrew)
-brew install --cask opencode-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
-```
-
-#### Каталог встановлення
+### Каталог встановлення
 
 Скрипт встановлення дотримується такого порядку пріоритету для шляху встановлення:
 
