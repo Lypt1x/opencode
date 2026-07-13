@@ -63,26 +63,7 @@ nix run nixpkgs#opencode           # lub github:anomalyco/opencode dla najnowsze
 
 > [!TIP]
 > Przed instalacją usuń wersje starsze niż 0.1.x.
-
-### Aplikacja desktopowa (BETA)
-
-OpenCode jest także dostępny jako aplikacja desktopowa. Pobierz ją bezpośrednio ze strony [releases](https://github.com/anomalyco/opencode/releases) lub z [opencode.ai/download](https://opencode.ai/download).
-
-| Platforma             | Pobieranie                            |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `opencode-desktop-darwin-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm` lub AppImage           |
-
-```bash
-# macOS (Homebrew)
-brew install --cask opencode-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
-```
-
-#### Katalog instalacji
+### Katalog instalacji
 
 Skrypt instalacyjny stosuje następujący priorytet wyboru ścieżki instalacji:
 
